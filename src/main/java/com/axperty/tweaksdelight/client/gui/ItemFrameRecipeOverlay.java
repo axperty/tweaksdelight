@@ -51,11 +51,13 @@ public class ItemFrameRecipeOverlay {
 
         if (crosshairTarget instanceof ItemFrame itemFrame) {
             ItemStack framedItem = itemFrame.getItem();
-            if (!framedItem.isEmpty() && framedItem.has(DataComponents.FOOD)) {
-                lookingAtValidFrame = true;
+            if (!framedItem.isEmpty() && isFoodItem(framedItem)) {
                 if (!ItemStack.isSameItemSameComponents(framedItem, targetFoodItem)) {
                     targetFoodItem = framedItem.copy();
                     updateCachedRecipe(mc, framedItem);
+                }
+                if (!cachedIngredients.isEmpty()) {
+                    lookingAtValidFrame = true;
                 }
             }
         }
@@ -135,13 +137,17 @@ public class ItemFrameRecipeOverlay {
 
         GuiGraphics graphics = event.getGuiGraphics();
 
-        int baseItemsWidth = cachedIngredients.size() * 18;
+        int itemsPerRow = Math.min(cachedIngredients.size(), 3);
+        int rows = (int) Math.ceil((double) cachedIngredients.size() / itemsPerRow);
+
+        int baseItemsWidth = itemsPerRow * 18;
         int outputWidth = 46;
         int boxWidth = Math.max(70, baseItemsWidth + outputWidth); 
-        int boxHeight = 40; 
+        int boxHeight = Math.max(40, rows * 18 + 22); 
         
         int x = mc.getWindow().getGuiScaledWidth() / 2 + 15;
-        int y = mc.getWindow().getGuiScaledHeight() / 2 - boxHeight / 2;
+        // Keep the top edge fixed and expand downwards
+        int y = mc.getWindow().getGuiScaledHeight() / 2 - 20;
 
         graphics.pose().pushPose();
         
@@ -164,24 +170,39 @@ public class ItemFrameRecipeOverlay {
         int textColor = (textAlpha << 24) | 0xFFFFFF; 
         graphics.drawString(mc.font, Component.translatable("gui.tweaksdelight.recipe"), x + 4, y + 4, textColor, false);
 
-        int currentX = x + 4;
-        int itemY = y + 17;
+        int gridStartX = x + 4;
+        int gridStartY = y + 17;
         
         for (int i = 0; i < cachedIngredients.size(); i++) {
             ItemStack[] stacks = cachedIngredients.get(i).getItems();
             if (stacks.length > 0) {
                 int index = (int) ((mc.level.getGameTime() / 20) % stacks.length);
-                graphics.renderItem(stacks[index], currentX, itemY);
+                int col = i % itemsPerRow;
+                int row = i / itemsPerRow;
+                graphics.renderItem(stacks[index], gridStartX + col * 18, gridStartY + row * 18);
             }
-            currentX += 18;
         }
 
-        currentX += 4;
-        ItemStack equalsItem = new ItemStack(ItemRegistry.EQUALS.get());
-        graphics.renderItem(equalsItem, currentX, itemY);
+        int afterGridX = gridStartX + baseItemsWidth + 4;
+        int centerY = gridStartY + (rows * 18) / 2 - 9;
         
-        currentX += 20;
-        graphics.renderItem(targetFoodItem, currentX, itemY);
+        ItemStack equalsItem = new ItemStack(ItemRegistry.EQUALS.get());
+        graphics.renderItem(equalsItem, afterGridX, centerY);
+        
+        afterGridX += 20;
+        graphics.renderItem(targetFoodItem, afterGridX, centerY);
         graphics.pose().popPose();
+    }
+
+    // This is not a perfect approach, but it works.
+    private static boolean isFoodItem(ItemStack stack) {
+        if (stack.has(DataComponents.FOOD)) return true;
+
+        // Custom check for placeable food blocks (like pies, feasts, stews) 
+        // that frequently don't have the FOOD component attached directly to the item.
+        String id = stack.getItem().toString().toLowerCase();
+        return id.contains("pie") || id.contains("stew") || id.contains("soup") || 
+               id.contains("feast") || id.contains("cake") || id.contains("meal") || 
+               id.contains("salad") || id.contains("potage");
     }
 }
