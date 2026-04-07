@@ -60,7 +60,7 @@ public class SmartIngredientHighlighting {
             }
         }
 
-        if (currentlyHovered != null && currentlyHovered.hasStack() && Screen.hasShiftDown()) {
+        if (currentlyHovered != null && currentlyHovered.hasStack() && mc.isShiftPressed()) {
             ItemStack stack = currentlyHovered.getStack();
             if (stack.contains(DataComponentTypes.FOOD)) {
                 if (lastHoveredSlot != currentlyHovered || !ItemStack.areEqual(stack, trackingItem)) {

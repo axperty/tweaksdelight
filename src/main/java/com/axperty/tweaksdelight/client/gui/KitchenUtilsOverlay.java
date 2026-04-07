@@ -46,6 +46,7 @@ public class KitchenUtilsOverlay {
     private static boolean isSkillet = false;
     private static ItemStack finishedOutput = ItemStack.EMPTY;
     private static ItemStack predictedOutput = ItemStack.EMPTY;
+    private static int tickCount = 0;
 
     public static void register() {
         ClientTickEvents.START_CLIENT_TICK.register(KitchenUtilsOverlay::onClientTick);
@@ -53,6 +54,7 @@ public class KitchenUtilsOverlay {
     }
 
     private static void onClientTick(MinecraftClient mc) {
+        tickCount++;
         prevFadeProgress = fadeProgress;
         if (mc.world == null || mc.player == null) return;
 
@@ -73,7 +75,7 @@ public class KitchenUtilsOverlay {
                     isSkillet = id.equals("farmersdelight:skillet");
 
                     BlockEntity be = mc.world.getBlockEntity(pos);
-                    if (be != null && (targetBlockPos == null || !targetBlockPos.equals(pos) || mc.world.getTime() % 5 == 0)) {
+                    if (be != null && (targetBlockPos == null || !targetBlockPos.equals(pos) || tickCount % 5 == 0)) {
                         targetBlockPos = pos;
                         updatePotContents(mc, pos, be);
                     }
