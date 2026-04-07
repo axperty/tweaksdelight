@@ -14,23 +14,23 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.client.event.RenderGuiEvent;
-import net.neoforged.neoforge.items.IItemHandler;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.client.event.RenderGuiOverlayEvent;
+import net.minecraftforge.items.IItemHandler;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@EventBusSubscriber(modid = TweaksDelight.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.GAME)
+@Mod.EventBusSubscriber(modid = TweaksDelight.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class KitchenUtilsOverlay {
 
     private static float fadeProgress = 0.0f;
@@ -44,7 +44,8 @@ public class KitchenUtilsOverlay {
     private static ItemStack predictedOutput = ItemStack.EMPTY;
 
     @SubscribeEvent
-    public static void onClientTick(ClientTickEvent.Pre event) {
+    public static void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) return;
         prevFadeProgress = fadeProgress;
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null) return;
@@ -106,20 +107,19 @@ public class KitchenUtilsOverlay {
         if (potIngredients.isEmpty()) {
             Direction[] dirs = new Direction[]{null, Direction.UP, Direction.DOWN, Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST};
             for (Direction d : dirs) {
-                IItemHandler handler = mc.level.getCapability(Capabilities.ItemHandler.BLOCK, pos, mc.level.getBlockState(pos), be, d);
-                if (handler != null) {
+                be.getCapability(ForgeCapabilities.ITEM_HANDLER, d).ifPresent(handler -> {
                     int limit = Math.min(6, handler.getSlots());
                     for (int i = 0; i < limit; i++) {
                         ItemStack stack = handler.getStackInSlot(i);
                         if (!stack.isEmpty()) potIngredients.add(stack.copy());
                     }
-                    if (!potIngredients.isEmpty()) break;
-                }
+                });
+                if (!potIngredients.isEmpty()) break;
             }
         }
 
         try {
-            CompoundTag nbt = be.saveCustomOnly(mc.level.registryAccess());
+            CompoundTag nbt = be.saveWithoutMetadata();
             
             // Client-side NBT sync fallback since Capabilities may not exist client-side for dynamic blocks
             if (potIngredients.isEmpty() && nbt.contains("Inventory")) {
@@ -128,14 +128,14 @@ public class KitchenUtilsOverlay {
                     ListTag itemList = invTag.getList("Items", 10); // 10 is CompoundTag ID
                     for (int i = 0; i < itemList.size(); i++) {
                         CompoundTag itemTag = itemList.getCompound(i);
-                        ItemStack parsed = ItemStack.parseOptional(mc.level.registryAccess(), itemTag);
+                        ItemStack parsed = ItemStack.of(itemTag);
                         if (!parsed.isEmpty()) potIngredients.add(parsed.copy());
                     }
                 }
             }
             // Skillet specific fast check if not inside standard Inventory
             if (potIngredients.isEmpty() && isSkillet && nbt.contains("Ingredient")) {
-                ItemStack parsed = ItemStack.parseOptional(mc.level.registryAccess(), nbt.getCompound("Ingredient"));
+                ItemStack parsed = ItemStack.of(nbt.getCompound("Ingredient"));
                 if (!parsed.isEmpty()) potIngredients.add(parsed.copy());
             }
             
@@ -159,8 +159,8 @@ public class KitchenUtilsOverlay {
         RecipeManager rm = mc.level.getRecipeManager();
         if (rm == null) return;
 
-        for (RecipeHolder<?> holder : rm.getRecipes()) {
-            String typeStr = holder.value().getType().toString();
+        for (Recipe<?> recipe : rm.getRecipes()) {
+            String typeStr = recipe.getType().toString();
             if (isSkillet) {
                 if (!typeStr.contains("campfire_cooking")) continue;
             } else {
@@ -168,7 +168,7 @@ public class KitchenUtilsOverlay {
             }
 
             boolean matches = true;
-            for (Ingredient ing : holder.value().getIngredients()) {
+            for (Ingredient ing : recipe.getIngredients()) {
                 if (ing.isEmpty()) continue;
                 boolean found = false;
                 for (ItemStack in : potIngredients) {
@@ -178,7 +178,7 @@ public class KitchenUtilsOverlay {
             }
             
             if (matches) {
-                predictedOutput = holder.value().getResultItem(mc.level.registryAccess());
+                predictedOutput = recipe.getResultItem(mc.level.registryAccess());
                 return;
             }
         }
@@ -186,9 +186,9 @@ public class KitchenUtilsOverlay {
     }
 
     @SubscribeEvent
-    public static void onRenderGui(RenderGuiEvent.Post event) {
+    public static void onRenderGui(RenderGuiOverlayEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
-        float partialTicks = event.getPartialTick().getGameTimeDeltaPartialTick(true);
+        float partialTicks = event.getPartialTick();
         float lerpedFade = Mth.lerp(partialTicks, prevFadeProgress, fadeProgress);
 
         if (lerpedFade <= 0.01f || potIngredients.isEmpty()) return;

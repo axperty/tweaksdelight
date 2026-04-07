@@ -5,25 +5,24 @@ import com.axperty.tweaksdelight.config.TweaksDelightConfig;
 import com.axperty.tweaksdelight.registry.ItemRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeManager;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.client.event.RenderGuiEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@EventBusSubscriber(modid = TweaksDelight.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.GAME)
+@Mod.EventBusSubscriber(modid = TweaksDelight.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ItemFrameRecipeOverlay {
 
     private static float fadeProgress = 0.0f;
@@ -33,7 +32,8 @@ public class ItemFrameRecipeOverlay {
     private static final List<Ingredient> cachedIngredients = new ArrayList<>();
 
     @SubscribeEvent
-    public static void onClientTick(ClientTickEvent.Pre event) {
+    public static void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) return;
         if (!TweaksDelightConfig.CLIENT.enableItemFrameRecipeOverlay.get()) {
             targetFade = 0.0f;
             fadeProgress = 0.0f;
@@ -52,7 +52,7 @@ public class ItemFrameRecipeOverlay {
         if (crosshairTarget instanceof ItemFrame itemFrame) {
             ItemStack framedItem = itemFrame.getItem();
             if (!framedItem.isEmpty() && isFoodItem(framedItem)) {
-                if (!ItemStack.isSameItemSameComponents(framedItem, targetFoodItem)) {
+                if (!ItemStack.isSameItemSameTags(framedItem, targetFoodItem)) {
                     targetFoodItem = framedItem.copy();
                     updateCachedRecipe(mc, framedItem);
                 }
@@ -84,20 +84,20 @@ public class ItemFrameRecipeOverlay {
         RecipeManager rm = mc.level.getRecipeManager();
         if (rm == null) return;
 
-        List<RecipeHolder<?>> matchingRecipes = new ArrayList<>();
+        List<Recipe<?>> matchingRecipes = new ArrayList<>();
         
-        for (RecipeHolder<?> holder : rm.getRecipes()) {
-            ItemStack result = holder.value().getResultItem(mc.level.registryAccess());
+        for (Recipe<?> recipe : rm.getRecipes()) {
+            ItemStack result = recipe.getResultItem(mc.level.registryAccess());
             if (result != null && !result.isEmpty() && ItemStack.isSameItem(result, target)) {
-                matchingRecipes.add(holder);
+                matchingRecipes.add(recipe);
             }
         }
 
         if (matchingRecipes.isEmpty()) return;
 
-        RecipeHolder<?> selected = null;
-        for (RecipeHolder<?> h : matchingRecipes) {
-            String typeStr = h.value().getType().toString();
+        Recipe<?> selected = null;
+        for (Recipe<?> h : matchingRecipes) {
+            String typeStr = h.getType().toString();
             if (typeStr.contains("cooking") || typeStr.contains("farmersdelight:cooking")) {
                 selected = h;
                 break;
@@ -105,8 +105,8 @@ public class ItemFrameRecipeOverlay {
         }
         
         if (selected == null) {
-            for (RecipeHolder<?> h : matchingRecipes) {
-                String typeStr = h.value().getType().toString();
+            for (Recipe<?> h : matchingRecipes) {
+                String typeStr = h.getType().toString();
                 if (typeStr.contains("cutting") || typeStr.contains("farmersdelight:cutting")) {
                     selected = h;
                     break;
@@ -118,18 +118,18 @@ public class ItemFrameRecipeOverlay {
             selected = matchingRecipes.get(0);
         }
 
-        for (Ingredient ing : selected.value().getIngredients()) {
+        for (Ingredient ing : selected.getIngredients()) {
             if (ing.isEmpty()) continue;
             cachedIngredients.add(ing);
         }
     }
 
     @SubscribeEvent
-    public static void onRenderGui(RenderGuiEvent.Post event) {
+    public static void onRenderGui(RenderGuiOverlayEvent.Post event) {
         if (!TweaksDelightConfig.CLIENT.enableItemFrameRecipeOverlay.get()) return;
 
         Minecraft mc = Minecraft.getInstance();
-        float partialTicks = event.getPartialTick().getGameTimeDeltaPartialTick(true);
+        float partialTicks = event.getPartialTick();
         
         float lerpedFade = Mth.lerp(partialTicks, prevFadeProgress, fadeProgress);
 
@@ -196,7 +196,7 @@ public class ItemFrameRecipeOverlay {
 
     // This is not a perfect approach, but it works.
     private static boolean isFoodItem(ItemStack stack) {
-        if (stack.has(DataComponents.FOOD)) return true;
+        if (stack.getItem().isEdible()) return true;
 
         // Custom check for placeable food blocks (like pies, feasts, stews) 
         // that frequently don't have the FOOD component attached directly to the item.

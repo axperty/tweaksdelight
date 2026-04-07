@@ -6,16 +6,17 @@ import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.server.ServerStartingEvent;
 
 @Mod(TweaksDelight.MOD_ID)
 public class TweaksDelight
@@ -23,12 +24,13 @@ public class TweaksDelight
     public static final String MOD_ID = "tweaksdelight";
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    public TweaksDelight(IEventBus modEventBus, ModContainer modContainer)
+    public TweaksDelight()
     {
-        modContainer.registerConfig(net.neoforged.fml.config.ModConfig.Type.CLIENT, TweaksDelightConfig.CLIENT_SPEC);
+        IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, TweaksDelightConfig.CLIENT_SPEC);
         modEventBus.addListener(this::commonSetup);
         ItemRegistry.ITEMS.register(modEventBus);
-        NeoForge.EVENT_BUS.register(this);
+        MinecraftForge.EVENT_BUS.register(this);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {}
@@ -36,7 +38,7 @@ public class TweaksDelight
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {}
 
-    @EventBusSubscriber(modid = MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+    @Mod.EventBusSubscriber(modid = MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     public static class ClientModEvents { 
         @SubscribeEvent 
         public static void onClientSetup(FMLClientSetupEvent event) {}

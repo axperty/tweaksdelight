@@ -6,21 +6,20 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeManager;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.ScreenEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.client.event.ScreenEvent;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@EventBusSubscriber(modid = TweaksDelight.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.GAME)
+@Mod.EventBusSubscriber(modid = TweaksDelight.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class SmartIngredientHighlighting {
 
     private static Slot lastHoveredSlot = null;
@@ -57,8 +56,8 @@ public class SmartIngredientHighlighting {
 
         if (currentlyHovered != null && currentlyHovered.hasItem() && Screen.hasShiftDown()) {
             ItemStack stack = currentlyHovered.getItem();
-            if (stack.has(DataComponents.FOOD)) {
-                if (lastHoveredSlot != currentlyHovered || !ItemStack.isSameItemSameComponents(stack, trackingItem)) {
+            if (stack.getItem().isEdible()) {
+                if (lastHoveredSlot != currentlyHovered || !ItemStack.isSameItemSameTags(stack, trackingItem)) {
                     lastHoveredSlot = currentlyHovered;
                     trackingItem = stack.copy();
                     hoverStartTime = System.currentTimeMillis();
@@ -120,20 +119,20 @@ public class SmartIngredientHighlighting {
         RecipeManager rm = mc.level.getRecipeManager();
         if (rm == null) return;
 
-        List<RecipeHolder<?>> matchingRecipes = new ArrayList<>();
+        List<Recipe<?>> matchingRecipes = new ArrayList<>();
         
-        for (RecipeHolder<?> holder : rm.getRecipes()) {
-            ItemStack result = holder.value().getResultItem(mc.level.registryAccess());
+        for (Recipe<?> recipe : rm.getRecipes()) {
+            ItemStack result = recipe.getResultItem(mc.level.registryAccess());
             if (result != null && !result.isEmpty() && ItemStack.isSameItem(result, target)) {
-                matchingRecipes.add(holder);
+                matchingRecipes.add(recipe);
             }
         }
 
         if (matchingRecipes.isEmpty()) return;
 
-        RecipeHolder<?> selected = null;
-        for (RecipeHolder<?> h : matchingRecipes) {
-            String typeStr = h.value().getType().toString();
+        Recipe<?> selected = null;
+        for (Recipe<?> h : matchingRecipes) {
+            String typeStr = h.getType().toString();
             if (typeStr.contains("cooking") || typeStr.contains("farmersdelight:cooking")) {
                 selected = h;
                 break;
@@ -141,8 +140,8 @@ public class SmartIngredientHighlighting {
         }
         
         if (selected == null) {
-            for (RecipeHolder<?> h : matchingRecipes) {
-                String typeStr = h.value().getType().toString();
+            for (Recipe<?> h : matchingRecipes) {
+                String typeStr = h.getType().toString();
                 if (typeStr.contains("cutting") || typeStr.contains("farmersdelight:cutting")) {
                     selected = h;
                     break;
@@ -154,7 +153,7 @@ public class SmartIngredientHighlighting {
             selected = matchingRecipes.get(0);
         }
 
-        for (Ingredient ing : selected.value().getIngredients()) {
+        for (Ingredient ing : selected.getIngredients()) {
             if (ing.isEmpty()) continue;
             for (ItemStack option : ing.getItems()) {
                 if (!option.isEmpty()) {
