@@ -10,6 +10,6 @@ public class ItemRegistry {
     public static final Item EQUALS = new Item(new Item.Settings());
 
     public static void register() {
-        Registry.register(Registries.ITEM, Identifier.of(TweaksDelight.MOD_ID, "equals"), EQUALS);
+        Registry.register(Registries.ITEM, new Identifier(TweaksDelight.MOD_ID, "equals"), EQUALS);
     }
 }

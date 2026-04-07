@@ -6,13 +6,11 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.component.DataComponentTypes;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.decoration.ItemFrameEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.recipe.Ingredient;
-import net.minecraft.recipe.RecipeEntry;
+import net.minecraft.recipe.Recipe;
 import net.minecraft.recipe.RecipeManager;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.MathHelper;
@@ -83,10 +81,10 @@ public class ItemFrameRecipeOverlay {
         RecipeManager rm = mc.world.getRecipeManager();
         if (rm == null) return;
 
-        List<RecipeEntry<?>> matchingRecipes = new ArrayList<>();
+        List<Recipe<?>> matchingRecipes = new ArrayList<>();
 
-        for (RecipeEntry<?> holder : rm.values()) {
-            ItemStack result = holder.value().getResult(mc.world.getRegistryManager());
+        for (Recipe<?> holder : rm.values()) {
+            ItemStack result = holder.getOutput(mc.world.getRegistryManager());
             if (result != null && !result.isEmpty() && ItemStack.areItemsEqual(result, target)) {
                 matchingRecipes.add(holder);
             }
@@ -94,9 +92,9 @@ public class ItemFrameRecipeOverlay {
 
         if (matchingRecipes.isEmpty()) return;
 
-        RecipeEntry<?> selected = null;
-        for (RecipeEntry<?> h : matchingRecipes) {
-            String typeStr = h.value().getType().toString();
+        Recipe<?> selected = null;
+        for (Recipe<?> h : matchingRecipes) {
+            String typeStr = h.getType().toString();
             if (typeStr.contains("cooking") || typeStr.contains("farmersdelight:cooking")) {
                 selected = h;
                 break;
@@ -104,8 +102,8 @@ public class ItemFrameRecipeOverlay {
         }
 
         if (selected == null) {
-            for (RecipeEntry<?> h : matchingRecipes) {
-                String typeStr = h.value().getType().toString();
+            for (Recipe<?> h : matchingRecipes) {
+                String typeStr = h.getType().toString();
                 if (typeStr.contains("cutting") || typeStr.contains("farmersdelight:cutting")) {
                     selected = h;
                     break;
@@ -117,17 +115,17 @@ public class ItemFrameRecipeOverlay {
             selected = matchingRecipes.get(0);
         }
 
-        for (Ingredient ing : selected.value().getIngredients()) {
+        for (Ingredient ing : selected.getIngredients()) {
             if (ing.isEmpty()) continue;
             cachedIngredients.add(ing);
         }
     }
 
-    private static void onRenderGui(DrawContext context, RenderTickCounter tickCounter) {
+    private static void onRenderGui(DrawContext context, float tickDelta) {
         if (!TweaksDelightConfig.CLIENT.enableItemFrameRecipeOverlay) return;
 
         MinecraftClient mc = MinecraftClient.getInstance();
-        float partialTicks = tickCounter.getTickDelta(true);
+        float partialTicks = tickDelta;
 
         float lerpedFade = MathHelper.lerp(partialTicks, prevFadeProgress, fadeProgress);
 
@@ -190,7 +188,7 @@ public class ItemFrameRecipeOverlay {
     }
 
     private static boolean isFoodItem(ItemStack stack) {
-        if (stack.contains(DataComponentTypes.FOOD)) return true;
+        if (stack.getItem().isFood()) return true;
 
         String id = stack.getItem().toString().toLowerCase();
         return id.contains("pie") || id.contains("stew") || id.contains("soup") ||

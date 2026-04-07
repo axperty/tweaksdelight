@@ -11,14 +11,13 @@ import net.fabricmc.fabric.api.transfer.v1.storage.StorageView;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.recipe.Ingredient;
-import net.minecraft.recipe.RecipeEntry;
+import net.minecraft.recipe.Recipe;
 import net.minecraft.recipe.RecipeManager;
 import net.minecraft.registry.Registries;
 import net.minecraft.text.Text;
@@ -128,7 +127,7 @@ public class KitchenUtilsOverlay {
         }
 
         try {
-            NbtCompound nbt = be.createNbt(mc.world.getRegistryManager());
+            NbtCompound nbt = be.createNbt();
 
             if (potIngredients.isEmpty() && nbt.contains("Inventory")) {
                 NbtCompound invTag = nbt.getCompound("Inventory");
@@ -136,13 +135,13 @@ public class KitchenUtilsOverlay {
                     NbtList itemList = invTag.getList("Items", NbtElement.COMPOUND_TYPE);
                     for (int i = 0; i < itemList.size(); i++) {
                         NbtCompound itemTag = itemList.getCompound(i);
-                        ItemStack parsed = ItemStack.fromNbtOrEmpty(mc.world.getRegistryManager(), itemTag);
+                        ItemStack parsed = ItemStack.fromNbt(itemTag);
                         if (!parsed.isEmpty()) potIngredients.add(parsed.copy());
                     }
                 }
             }
             if (potIngredients.isEmpty() && isSkillet && nbt.contains("Ingredient")) {
-                ItemStack parsed = ItemStack.fromNbtOrEmpty(mc.world.getRegistryManager(), nbt.getCompound("Ingredient"));
+                ItemStack parsed = ItemStack.fromNbt(nbt.getCompound("Ingredient"));
                 if (!parsed.isEmpty()) potIngredients.add(parsed.copy());
             }
 
@@ -166,8 +165,8 @@ public class KitchenUtilsOverlay {
         RecipeManager rm = mc.world.getRecipeManager();
         if (rm == null) return;
 
-        for (RecipeEntry<?> holder : rm.values()) {
-            String typeStr = holder.value().getType().toString();
+        for (Recipe<?> holder : rm.values()) {
+            String typeStr = holder.getType().toString();
             if (isSkillet) {
                 if (!typeStr.contains("campfire_cooking")) continue;
             } else {
@@ -175,7 +174,7 @@ public class KitchenUtilsOverlay {
             }
 
             boolean matches = true;
-            for (Ingredient ing : holder.value().getIngredients()) {
+            for (Ingredient ing : holder.getIngredients()) {
                 if (ing.isEmpty()) continue;
                 boolean found = false;
                 for (ItemStack in : potIngredients) {
@@ -185,16 +184,16 @@ public class KitchenUtilsOverlay {
             }
 
             if (matches) {
-                predictedOutput = holder.value().getResult(mc.world.getRegistryManager());
+                predictedOutput = holder.getOutput(mc.world.getRegistryManager());
                 return;
             }
         }
         predictedOutput = ItemStack.EMPTY;
     }
 
-    private static void onRenderGui(DrawContext context, RenderTickCounter tickCounter) {
+    private static void onRenderGui(DrawContext context, float tickDelta) {
         MinecraftClient mc = MinecraftClient.getInstance();
-        float partialTicks = tickCounter.getTickDelta(true);
+        float partialTicks = tickDelta;
         float lerpedFade = MathHelper.lerp(partialTicks, prevFadeProgress, fadeProgress);
 
         if (lerpedFade <= 0.01f || potIngredients.isEmpty()) return;

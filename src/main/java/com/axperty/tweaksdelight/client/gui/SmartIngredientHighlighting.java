@@ -7,10 +7,9 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.component.DataComponentTypes;
 import net.minecraft.item.ItemStack;
 import net.minecraft.recipe.Ingredient;
-import net.minecraft.recipe.RecipeEntry;
+import net.minecraft.recipe.Recipe;
 import net.minecraft.recipe.RecipeManager;
 import net.minecraft.screen.slot.Slot;
 
@@ -55,7 +54,7 @@ public class SmartIngredientHighlighting {
 
         if (currentlyHovered != null && currentlyHovered.hasStack() && Screen.hasShiftDown()) {
             ItemStack stack = currentlyHovered.getStack();
-            if (stack.contains(DataComponentTypes.FOOD)) {
+            if (stack.getItem().isFood()) {
                 if (lastHoveredSlot != currentlyHovered || !ItemStack.areEqual(stack, trackingItem)) {
                     lastHoveredSlot = currentlyHovered;
                     trackingItem = stack.copy();
@@ -117,10 +116,10 @@ public class SmartIngredientHighlighting {
         RecipeManager rm = mc.world.getRecipeManager();
         if (rm == null) return;
 
-        List<RecipeEntry<?>> matchingRecipes = new ArrayList<>();
+        List<Recipe<?>> matchingRecipes = new ArrayList<>();
 
-        for (RecipeEntry<?> holder : rm.values()) {
-            ItemStack result = holder.value().getResult(mc.world.getRegistryManager());
+        for (Recipe<?> holder : rm.values()) {
+            ItemStack result = holder.getOutput(mc.world.getRegistryManager());
             if (result != null && !result.isEmpty() && ItemStack.areItemsEqual(result, target)) {
                 matchingRecipes.add(holder);
             }
@@ -128,9 +127,9 @@ public class SmartIngredientHighlighting {
 
         if (matchingRecipes.isEmpty()) return;
 
-        RecipeEntry<?> selected = null;
-        for (RecipeEntry<?> h : matchingRecipes) {
-            String typeStr = h.value().getType().toString();
+        Recipe<?> selected = null;
+        for (Recipe<?> h : matchingRecipes) {
+            String typeStr = h.getType().toString();
             if (typeStr.contains("cooking") || typeStr.contains("farmersdelight:cooking")) {
                 selected = h;
                 break;
@@ -138,8 +137,8 @@ public class SmartIngredientHighlighting {
         }
 
         if (selected == null) {
-            for (RecipeEntry<?> h : matchingRecipes) {
-                String typeStr = h.value().getType().toString();
+            for (Recipe<?> h : matchingRecipes) {
+                String typeStr = h.getType().toString();
                 if (typeStr.contains("cutting") || typeStr.contains("farmersdelight:cutting")) {
                     selected = h;
                     break;
@@ -151,7 +150,7 @@ public class SmartIngredientHighlighting {
             selected = matchingRecipes.get(0);
         }
 
-        for (Ingredient ing : selected.value().getIngredients()) {
+        for (Ingredient ing : selected.getIngredients()) {
             if (ing.isEmpty()) continue;
             for (ItemStack option : ing.getMatchingStacks()) {
                 if (!option.isEmpty()) {
