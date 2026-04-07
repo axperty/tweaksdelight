@@ -1,15 +1,23 @@
 package com.axperty.tweaksdelight.registry;
 
-import com.axperty.tweaksdelight.TweaksDelight;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.Registries;
-import net.minecraft.util.Identifier;
 import net.minecraft.item.Item;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
+import net.minecraft.util.Identifier;
 
 public class ItemRegistry {
-    public static final Item EQUALS = new Item(new Item.Settings());
+
+    public static final Item EQUALS = registerItem("equals", new Item.Settings());
 
     public static void register() {
-        Registry.register(Registries.ITEM, Identifier.of(TweaksDelight.MOD_ID, "equals"), EQUALS);
+
+    }
+
+    private static Item registerItem(String name, Item.Settings settings) {
+        Identifier id = Identifier.of("tweaksdelight", name);
+        RegistryKey<Item> key = RegistryKey.of(RegistryKeys.ITEM, id);
+        return Registry.register(Registries.ITEM, key, new Item(settings.registryKey(key)));
     }
 }

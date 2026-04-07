@@ -10,11 +10,15 @@ import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.decoration.ItemFrameEntity;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.recipe.Ingredient;
-import net.minecraft.recipe.RecipeEntry;
-import net.minecraft.recipe.RecipeManager;
+import net.minecraft.recipe.*;
+import net.minecraft.recipe.display.RecipeDisplay;
+import net.minecraft.recipe.display.SlotDisplay;
+import net.minecraft.recipe.display.SlotDisplayContexts;
+import net.minecraft.registry.Registries;
 import net.minecraft.text.Text;
+import net.minecraft.util.context.ContextParameterMap;
 import net.minecraft.util.math.MathHelper;
 
 import java.util.ArrayList;
@@ -26,7 +30,7 @@ public class ItemFrameRecipeOverlay {
     private static float prevFadeProgress = 0.0f;
     private static float targetFade = 0.0f;
     private static ItemStack targetFoodItem = ItemStack.EMPTY;
-    private static final List<Ingredient> cachedIngredients = new ArrayList<>();
+    private static final List<List<ItemStack>> cachedIngredients = new ArrayList<>();
 
     public static void register() {
         ClientTickEvents.START_CLIENT_TICK.register(ItemFrameRecipeOverlay::onClientTick);
@@ -80,15 +84,26 @@ public class ItemFrameRecipeOverlay {
 
     private static void updateCachedRecipe(MinecraftClient mc, ItemStack target) {
         cachedIngredients.clear();
-        RecipeManager rm = mc.world.getRecipeManager();
-        if (rm == null) return;
+
+        if (mc.getServer() == null) return;
+        ServerRecipeManager rm = mc.getServer().getRecipeManager();
 
         List<RecipeEntry<?>> matchingRecipes = new ArrayList<>();
 
         for (RecipeEntry<?> holder : rm.values()) {
-            ItemStack result = holder.value().getResult(mc.world.getRegistryManager());
-            if (result != null && !result.isEmpty() && ItemStack.areItemsEqual(result, target)) {
-                matchingRecipes.add(holder);
+            Recipe<?> recipe = holder.value();
+
+            List<RecipeDisplay> displays = recipe.getDisplays();
+            if (displays.isEmpty()) continue;
+
+            SlotDisplay resultDisplay = displays.get(0).result();
+            List<ItemStack> resultStacks = resultDisplay.getStacks(SlotDisplayContexts.createParameters(mc.world));
+
+            if (!resultStacks.isEmpty()) {
+                ItemStack result = resultStacks.get(0);
+                if (result != null && !result.isEmpty() && ItemStack.areItemsEqual(result, target)) {
+                    matchingRecipes.add(holder);
+                }
             }
         }
 
@@ -117,9 +132,21 @@ public class ItemFrameRecipeOverlay {
             selected = matchingRecipes.get(0);
         }
 
-        for (Ingredient ing : selected.value().getIngredients()) {
+        for (Ingredient ing : selected.value().getIngredientPlacement().getIngredients()) {
             if (ing.isEmpty()) continue;
-            cachedIngredients.add(ing);
+
+            List<ItemStack> matchingStacks = new ArrayList<>();
+
+            for (Item item : Registries.ITEM) {
+                ItemStack testStack = new ItemStack(item);
+                if (ing.test(testStack)) {
+                    matchingStacks.add(testStack);
+                }
+            }
+
+            if (!matchingStacks.isEmpty()) {
+                cachedIngredients.add(matchingStacks);
+            }
         }
     }
 
@@ -127,7 +154,7 @@ public class ItemFrameRecipeOverlay {
         if (!TweaksDelightConfig.CLIENT.enableItemFrameRecipeOverlay) return;
 
         MinecraftClient mc = MinecraftClient.getInstance();
-        float partialTicks = tickCounter.getTickDelta(true);
+        float partialTicks = tickCounter.getDynamicDeltaTicks();
 
         float lerpedFade = MathHelper.lerp(partialTicks, prevFadeProgress, fadeProgress);
 
@@ -144,15 +171,15 @@ public class ItemFrameRecipeOverlay {
         int x = mc.getWindow().getScaledWidth() / 2 + 15;
         int y = mc.getWindow().getScaledHeight() / 2 - 20;
 
-        context.getMatrices().push();
+        context.getMatrices().pushMatrix();
 
         float scale = 0.85f + (0.15f * lerpedFade);
         float translateX = x + (boxWidth / 2.0f);
         float translateY = y + (boxHeight / 2.0f);
 
-        context.getMatrices().translate(translateX, translateY, 0);
-        context.getMatrices().scale(scale, scale, 1.0f);
-        context.getMatrices().translate(-translateX, -translateY, 0);
+        context.getMatrices().translate(translateX, translateY);
+        context.getMatrices().scale(scale, scale);
+        context.getMatrices().translate(-translateX, -translateY);
 
         int alpha = (int)(180 * lerpedFade);
         int bgColor = (alpha << 24) | 0x111111;
@@ -169,12 +196,12 @@ public class ItemFrameRecipeOverlay {
         int gridStartY = y + 17;
 
         for (int i = 0; i < cachedIngredients.size(); i++) {
-            ItemStack[] stacks = cachedIngredients.get(i).getMatchingStacks();
-            if (stacks.length > 0) {
-                int index = (int) ((mc.world.getTime() / 20) % stacks.length);
+            List<ItemStack> stacks = cachedIngredients.get(i);
+            if (!stacks.isEmpty()) {
+                int index = (int) ((mc.world.getTime() / 20) % stacks.size());
                 int col = i % itemsPerRow;
                 int row = i / itemsPerRow;
-                context.drawItem(stacks[index], gridStartX + col * 18, gridStartY + row * 18);
+                context.drawItem(stacks.get(index), gridStartX + col * 18, gridStartY + row * 18);
             }
         }
 
@@ -186,7 +213,7 @@ public class ItemFrameRecipeOverlay {
 
         afterGridX += 20;
         context.drawItem(targetFoodItem, afterGridX, centerY);
-        context.getMatrices().pop();
+        context.getMatrices().popMatrix();
     }
 
     private static boolean isFoodItem(ItemStack stack) {

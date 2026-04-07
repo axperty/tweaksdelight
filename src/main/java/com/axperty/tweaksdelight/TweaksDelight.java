@@ -1,5 +1,6 @@
 package com.axperty.tweaksdelight;
 
+import com.axperty.tweaksdelight.client.gui.ItemFrameRecipeOverlay;
 import com.axperty.tweaksdelight.config.TweaksDelightConfig;
 import com.axperty.tweaksdelight.registry.ItemRegistry;
 import net.fabricmc.api.ModInitializer;
@@ -13,6 +14,7 @@ public class TweaksDelight implements ModInitializer {
     @Override
     public void onInitialize() {
         TweaksDelightConfig.init();
+        ItemFrameRecipeOverlay.register();
         ItemRegistry.register();
     }
 }
