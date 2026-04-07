@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.axperty.tweaksdelight.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+  ],
+  "client": [
+    "HandledScreenAccessor"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
