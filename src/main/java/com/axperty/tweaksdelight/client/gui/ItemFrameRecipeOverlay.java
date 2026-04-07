@@ -203,6 +203,6 @@ public class ItemFrameRecipeOverlay {
         String id = stack.getItem().toString().toLowerCase();
         return id.contains("pie") || id.contains("stew") || id.contains("soup") || 
                id.contains("feast") || id.contains("cake") || id.contains("meal") || 
-               id.contains("salad") || id.contains("potage");
+               id.contains("salad") || id.contains("potage") || id.contains("roast");
     }
 }
