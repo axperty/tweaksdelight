@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "tweaksdelight",
-  "version": "26.04.07-1.21.11-fabric",
+  "version": "26.04.07+26.1-fabric",
   "name": "Tweaks Delight",
   "description": "An addon mod for Farmer's Delight that adds extra quality of life features.",
   "authors": [
@@ -25,9 +25,9 @@
     "tweaksdelight.mixins.json"
   ],
   "depends": {
-    "fabricloader": ">=0.16.14",
-    "minecraft": "1.21.11",
-    "java": ">=21",
+    "fabricloader": ">=0.18.6",
+    "minecraft": ">=26.1",
+    "java": ">=25",
     "fabric-api": "*",
     "farmersdelight": "*"
   },

@@ -1,25 +1,25 @@
 package com.axperty.tweaksdelight.client.gui;
 
-import com.axperty.tweaksdelight.mixin.HandledScreenAccessor;
+import com.axperty.tweaksdelight.mixin.AbstractContainerScreenAccessor;
 import com.axperty.tweaksdelight.config.TweaksDelightConfig;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.recipe.Ingredient;
-import net.minecraft.recipe.Recipe;
-import net.minecraft.recipe.RecipeEntry;
-import net.minecraft.recipe.ServerRecipeManager;
-import net.minecraft.recipe.display.RecipeDisplay;
-import net.minecraft.recipe.display.SlotDisplay;
-import net.minecraft.recipe.display.SlotDisplayContexts;
-import net.minecraft.registry.Registries;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.RecipeManager;
+import net.minecraft.world.item.crafting.display.RecipeDisplay;
+import net.minecraft.world.item.crafting.display.SlotDisplay;
+import net.minecraft.world.item.crafting.display.SlotDisplayContext;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.util.Mth;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,25 +34,25 @@ public class SmartIngredientHighlighting {
 
     public static void register() {
         ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
-            if (screen instanceof HandledScreen<?> handledScreen) {
-                ScreenEvents.afterRender(screen).register((s, context, mouseX, mouseY, tickCounter) -> {
+            if (screen instanceof AbstractContainerScreen<?> handledScreen) {
+                ScreenEvents.afterExtract(screen).register((s, context, mouseX, mouseY, tickCounter) -> {
                     onScreenRender(handledScreen, context, mouseX, mouseY);
                 });
             }
         });
     }
 
-    private static void onScreenRender(HandledScreen<?> screen, DrawContext context, int mouseX, int mouseY) {
+    private static void onScreenRender(AbstractContainerScreen<?> screen, GuiGraphicsExtractor context, int mouseX, int mouseY) {
         if (!TweaksDelightConfig.CLIENT.enableSmartIngredientHighlighting) return;
 
-        MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc.world == null || mc.player == null) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || mc.player == null) return;
 
-        int guiLeft = ((HandledScreenAccessor) screen).getX();
-        int guiTop = ((HandledScreenAccessor) screen).getY();
+        int guiLeft = ((AbstractContainerScreenAccessor) screen).getLeftPos();
+        int guiTop = ((AbstractContainerScreenAccessor) screen).getTopPos();
 
         Slot currentlyHovered = null;
-        for (Slot slot : screen.getScreenHandler().slots) {
+        for (Slot slot : screen.getMenu().slots) {
             if (mouseX >= guiLeft + slot.x && mouseX < guiLeft + slot.x + 16 &&
                     mouseY >= guiTop + slot.y && mouseY < guiTop + slot.y + 16) {
                 currentlyHovered = slot;
@@ -60,10 +60,10 @@ public class SmartIngredientHighlighting {
             }
         }
 
-        if (currentlyHovered != null && currentlyHovered.hasStack() && mc.isShiftPressed()) {
-            ItemStack stack = currentlyHovered.getStack();
-            if (stack.contains(DataComponentTypes.FOOD)) {
-                if (lastHoveredSlot != currentlyHovered || !ItemStack.areEqual(stack, trackingItem)) {
+        if (currentlyHovered != null && currentlyHovered.hasItem() && mc.hasShiftDown()) {
+            ItemStack stack = currentlyHovered.getItem();
+            if (stack.has(DataComponents.FOOD)) {
+                if (lastHoveredSlot != currentlyHovered || !ItemStack.matches(stack, trackingItem)) {
                     lastHoveredSlot = currentlyHovered;
                     trackingItem = stack.copy();
                     hoverStartTime = System.currentTimeMillis();
@@ -80,24 +80,24 @@ public class SmartIngredientHighlighting {
         }
 
         if (highlightActive && !requiredIngredients.isEmpty()) {
-            context.getMatrices().pushMatrix();
-            context.getMatrices().translate(0.0f, 0.0f);
+            context.pose().pushMatrix();
+            context.pose().translate(0.0f, 0.0f);
 
-            for (Slot slot : screen.getScreenHandler().slots) {
+            for (Slot slot : screen.getMenu().slots) {
                 if (slot == currentlyHovered) continue;
 
                 int x = guiLeft + slot.x;
                 int y = guiTop + slot.y;
 
-                if (!slot.hasStack()) {
+                if (!slot.hasItem()) {
                     context.fill(x, y, x + 16, y + 16, 0x88C6C6C6);
                     continue;
                 }
 
-                ItemStack slotItem = slot.getStack();
+                ItemStack slotItem = slot.getItem();
                 boolean isIngredient = false;
                 for (ItemStack req : requiredIngredients) {
-                    if (ItemStack.areItemsEqual(slotItem, req)) {
+                    if (ItemStack.isSameItem(slotItem, req)) {
                         isIngredient = true;
                         break;
                     }
@@ -108,7 +108,7 @@ public class SmartIngredientHighlighting {
                 }
             }
 
-            context.getMatrices().popMatrix();
+            context.pose().popMatrix();
         }
     }
 
@@ -119,25 +119,25 @@ public class SmartIngredientHighlighting {
         requiredIngredients.clear();
     }
 
-    private static void loadIngredients(MinecraftClient mc, ItemStack target) {
+    private static void loadIngredients(Minecraft mc, ItemStack target) {
         requiredIngredients.clear();
 
-        if (mc.getServer() == null) return;
-        ServerRecipeManager rm = mc.getServer().getRecipeManager();
+        if (mc.getSingleplayerServer() == null) return;
+        RecipeManager rm = mc.getSingleplayerServer().getRecipeManager();
 
-        List<RecipeEntry<?>> matchingRecipes = new ArrayList<>();
+        List<RecipeHolder<?>> matchingRecipes = new ArrayList<>();
 
-        for (RecipeEntry<?> holder : rm.values()) {
+        for (RecipeHolder<?> holder : rm.getRecipes()) {
             Recipe<?> recipe = holder.value();
-            List<RecipeDisplay> displays = recipe.getDisplays();
+            List<RecipeDisplay> displays = recipe.display();
             if (displays.isEmpty()) continue;
 
             SlotDisplay resultDisplay = displays.get(0).result();
-            List<ItemStack> resultStacks = resultDisplay.getStacks(SlotDisplayContexts.createParameters(mc.world));
+            List<ItemStack> resultStacks = resultDisplay.resolveForStacks(SlotDisplayContext.fromLevel(mc.level));
 
             if (!resultStacks.isEmpty()) {
                 ItemStack result = resultStacks.get(0);
-                if (result != null && !result.isEmpty() && ItemStack.areItemsEqual(result, target)) {
+                if (result != null && !result.isEmpty() && ItemStack.isSameItem(result, target)) {
                     matchingRecipes.add(holder);
                 }
             }
@@ -145,8 +145,8 @@ public class SmartIngredientHighlighting {
 
         if (matchingRecipes.isEmpty()) return;
 
-        RecipeEntry<?> selected = null;
-        for (RecipeEntry<?> h : matchingRecipes) {
+        RecipeHolder<?> selected = null;
+        for (RecipeHolder<?> h : matchingRecipes) {
             String typeStr = h.value().getType().toString();
             if (typeStr.contains("cooking") || typeStr.contains("farmersdelight:cooking")) {
                 selected = h;
@@ -155,7 +155,7 @@ public class SmartIngredientHighlighting {
         }
 
         if (selected == null) {
-            for (RecipeEntry<?> h : matchingRecipes) {
+            for (RecipeHolder<?> h : matchingRecipes) {
                 String typeStr = h.value().getType().toString();
                 if (typeStr.contains("cutting") || typeStr.contains("farmersdelight:cutting")) {
                     selected = h;
@@ -168,10 +168,10 @@ public class SmartIngredientHighlighting {
             selected = matchingRecipes.get(0);
         }
 
-        for (Ingredient ing : selected.value().getIngredientPlacement().getIngredients()) {
+        for (Ingredient ing : selected.value().placementInfo().ingredients()) {
             if (ing.isEmpty()) continue;
 
-            for (Item item : Registries.ITEM) {
+            for (Item item : BuiltInRegistries.ITEM) {
                 ItemStack testStack = new ItemStack(item);
                 if (ing.test(testStack)) {
                     requiredIngredients.add(testStack.copy());
