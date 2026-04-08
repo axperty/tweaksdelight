@@ -5,20 +5,29 @@ body:
     attributes:
       value: |
         Please fill out the form below to describe your issue.
+  - type: checkboxes
+    id: search_check
+    attributes:
+      label: Search before posting
+      description: Did you check the issue tracker for similar reports?
+      options:
+        - label: I have searched for existing issues
+    validations:
+      required: true
   - type: input
     id: minecraft_version
     attributes:
       label: Minecraft version
       placeholder: |
-        Example: 1.20
+        Example: 1.20.1
     validations:
       required: true
   - type: input
     id: md_version
     attributes:
-      label: More Delight version
+      label: Tweaks Delight version
       placeholder: |
-        Example: 25.05.14-1.21-neoforge
+        Example: 26.04.07+26.1-fabric
     validations:
       required: true
   - type: input
@@ -26,15 +35,18 @@ body:
     attributes:
       label: Farmer's Delight version
       placeholder: |
-        Example: 1.2.8-1.20.1
+        Example: 26.1-3.5.2
     validations:
       required: true
-  - type: input
+  - type: dropdown
     id: mod_loader
     attributes:
       label: Mod loader
-      placeholder: |
-        Example: Neoforge
+      options:
+        - Fabric
+        - Forge
+        - NeoForge
+        - Quilt
     validations:
       required: true
   - type: input
@@ -42,35 +54,37 @@ body:
     attributes:
       label: Mod loader version
       placeholder: |
-        Example: 21.7.23-beta
+        Example: 0.15.7
     validations:
       required: true
   - type: textarea
     id: description
     attributes:
       label: Description
-      description: Please explain in detail what the issue is. Feel free to attach screenshots or videos, if it helps!
+      description: Explain what the issue is. You can attach screenshots or videos.
       placeholder: |
         Example:
-        When right-clicking a certain block, the game crashes.
+        When I right click a specific block, the game crashes.
     validations:
       required: true
   - type: textarea
     id: reproduction_steps
     attributes:
       label: Steps to reproduce
-      description: Which steps did you take to cause the issue? Please describe below how to replicate it.
+      description: Describe the steps to replicate the issue.
       placeholder: |
         Example:
-        1. Place block;
-        2. Attempt to right click the block.
+        1. Place the block.
+        2. Right click the block.
+    validations:
+      required: true
   - type: textarea
     id: mod_list
     attributes:
       label: Mod list
       description: |
-        Please provide the list of mods you're using.
-        You can generate a mod list by forcing a crash. In your game, hold F3+C for 10 seconds, then check your logs; the list of mods will be by the end.
+        Provide the list of mods you are using.
+        To generate a list, hold F3+C for 10 seconds in game. The mod list appears at the end of your logs.
     validations:
       required: true
   - type: textarea
@@ -78,19 +92,15 @@ body:
     attributes:
       label: Logs
       description: |
-        Please provide the client or server logs from your launcher. They contain vital information to troubleshoot the issue.
-        To upload logs, you can use websites such as: https://pastebin.com/ https://paste.ee/ https://mclo.gs/
+        Provide the client or server logs.
+        Upload logs to sites like https://mclo.gs/ or https://paste.ee/ and share the link here.
+    validations:
+      required: true
   - type: checkboxes
-    id: has_tested_minimal_instance
+    id: troubleshooting_steps
     attributes:
-      label: Minimal instance
-      description: Have you tried testing the issue on a Minecraft instance containing only More Delight and mods related to the issue?
+      label: Troubleshooting
+      description: Please confirm which troubleshooting steps you have taken.
       options:
-        - label: I have tested this on a minimal instance
-  - type: checkboxes
-    id: is_using_performance_mods
-    attributes:
-      label: Performance and shader mods
-      description: Sometimes, performance and shader mods (for example, Sodium, Iris etc.) can cause unpredictable problems. Were you using such mods when the issue happened?
-      options:
-        - label: I am using performance or shader mods
+        - label: I tested this on a minimal instance with only necessary mods
+        - label: I checked if performance or shader mods cause the issue
