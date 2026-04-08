@@ -4,16 +4,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Please fill out the form below to describe your issue.
-  - type: checkboxes
-    id: search_check
-    attributes:
-      label: Search before posting
-      description: Did you check the issue tracker for similar reports?
-      options:
-        - label: I have searched for existing issues
-    validations:
-      required: true
+        Please fill out the form below to describe the issue.
   - type: input
     id: minecraft_version
     attributes:
@@ -23,11 +14,22 @@ body:
     validations:
       required: true
   - type: input
-    id: md_version
+    id: td_version
     attributes:
       label: Tweaks Delight version
       placeholder: |
         Example: 26.04.07+26.1-fabric
+    validations:
+      required: true
+  - type: dropdown
+    id: mod_loader
+    attributes:
+      label: Mod loader
+      options:
+        - Forge
+        - Fabric
+        - NeoForge
+        - Quilt
     validations:
       required: true
   - type: input
@@ -36,71 +38,26 @@ body:
       label: Farmer's Delight version
       placeholder: |
         Example: 26.1-3.5.2
-    validations:
-      required: true
-  - type: dropdown
-    id: mod_loader
-    attributes:
-      label: Mod loader
-      options:
-        - Fabric
-        - Forge
-        - NeoForge
-        - Quilt
-    validations:
-      required: true
-  - type: input
-    id: mod_loader_version
-    attributes:
-      label: Mod loader version
-      placeholder: |
-        Example: 0.15.7
-    validations:
-      required: true
   - type: textarea
     id: description
     attributes:
       label: Description
-      description: Explain what the issue is. You can attach screenshots or videos.
+      description: Explain what is happening.
       placeholder: |
-        Example:
-        When I right click a specific block, the game crashes.
+        Example: When I join a world and I right click a certain block, the game crashes immediately.
     validations:
       required: true
   - type: textarea
     id: reproduction_steps
     attributes:
       label: Steps to reproduce
-      description: Describe the steps to replicate the issue.
+      description: How can I make this happen again?
       placeholder: |
-        Example:
-        1. Place the block.
-        2. Right click the block.
-    validations:
-      required: true
-  - type: textarea
-    id: mod_list
-    attributes:
-      label: Mod list
-      description: |
-        Provide the list of mods you are using.
-        To generate a list, hold F3+C for 10 seconds in game. The mod list appears at the end of your logs.
-    validations:
-      required: true
+        1. Place block.
+        2. Attempt to right click the block.
   - type: textarea
     id: logs
     attributes:
       label: Logs
       description: |
-        Provide the client or server logs.
-        Upload logs to sites like https://mclo.gs/ or https://paste.ee/ and share the link here.
-    validations:
-      required: true
-  - type: checkboxes
-    id: troubleshooting_steps
-    attributes:
-      label: Troubleshooting
-      description: Please confirm which troubleshooting steps you have taken.
-      options:
-        - label: I tested this on a minimal instance with only necessary mods
-        - label: I checked if performance or shader mods cause the issue
+        Upload logs to https://mclo.gs/ and paste the link here.
