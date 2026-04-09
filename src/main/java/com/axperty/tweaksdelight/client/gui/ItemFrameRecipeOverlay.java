@@ -171,15 +171,15 @@ public class ItemFrameRecipeOverlay {
         int x = mc.getWindow().getScaledWidth() / 2 + 15;
         int y = mc.getWindow().getScaledHeight() / 2 - 20;
 
-        context.getMatrices().pushMatrix();
+        context.getMatrices().push();
 
         float scale = 0.85f + (0.15f * lerpedFade);
         float translateX = x + (boxWidth / 2.0f);
         float translateY = y + (boxHeight / 2.0f);
 
-        context.getMatrices().translate(translateX, translateY);
-        context.getMatrices().scale(scale, scale);
-        context.getMatrices().translate(-translateX, -translateY);
+        context.getMatrices().translate(translateX, translateY, 0);
+        context.getMatrices().scale(scale, scale, 1.0f);
+        context.getMatrices().translate(-translateX, -translateY, 0);
 
         int alpha = (int)(180 * lerpedFade);
         int bgColor = (alpha << 24) | 0x111111;
@@ -213,7 +213,7 @@ public class ItemFrameRecipeOverlay {
 
         afterGridX += 20;
         context.drawItem(targetFoodItem, afterGridX, centerY);
-        context.getMatrices().popMatrix();
+        context.getMatrices().pop();
     }
 
     private static boolean isFoodItem(ItemStack stack) {

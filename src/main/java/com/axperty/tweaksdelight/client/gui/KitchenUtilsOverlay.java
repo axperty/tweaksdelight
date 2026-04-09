@@ -270,15 +270,15 @@ public class KitchenUtilsOverlay {
         int x = mc.getWindow().getScaledWidth() / 2 - boxWidth / 2;
         int y = mc.getWindow().getScaledHeight() / 2 + 15;
 
-        context.getMatrices().pushMatrix();
+        context.getMatrices().push();
 
         float scale = 0.85f + (0.15f * lerpedFade);
         float translateX = x + (boxWidth / 2.0f);
         float translateY = y + (boxHeight / 2.0f);
 
-        context.getMatrices().translate(translateX, translateY);
-        context.getMatrices().scale(scale, scale);
-        context.getMatrices().translate(-translateX, -translateY);
+        context.getMatrices().translate(translateX, translateY, 0);
+        context.getMatrices().scale(scale, scale, 1.0f);
+        context.getMatrices().translate(-translateX, -translateY, 0);
 
         int alpha = (int)(200 * lerpedFade);
         int bgColor = (alpha << 24) | 0x111111;
@@ -326,6 +326,6 @@ public class KitchenUtilsOverlay {
             context.fill(x + 4, y + 37, x + 4 + filledWidth, y + 39, (alpha << 24) | 0xFF8800);
         }
 
-        context.getMatrices().popMatrix();
+        context.getMatrices().pop();
     }
 }

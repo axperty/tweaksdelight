@@ -80,8 +80,8 @@ public class SmartIngredientHighlighting {
         }
 
         if (highlightActive && !requiredIngredients.isEmpty()) {
-            context.getMatrices().pushMatrix();
-            context.getMatrices().translate(0.0f, 0.0f);
+            context.getMatrices().push();
+            context.getMatrices().translate(0, 0, 300);
 
             for (Slot slot : screen.getScreenHandler().slots) {
                 if (slot == currentlyHovered) continue;
@@ -108,7 +108,7 @@ public class SmartIngredientHighlighting {
                 }
             }
 
-            context.getMatrices().popMatrix();
+            context.getMatrices().pop();
         }
     }
 
