@@ -79,6 +79,12 @@ public class ItemFrameRecipeOverlay {
             }
         }
 
+        if (lookingAtValidFrame) {
+            targetFade = 1.0f;
+        } else {
+            targetFade = 0.0f;
+        }
+
         if (targetFade > 0.0f) {
             fadeProgress = Math.min(1.0f, fadeProgress + 0.15f);
         } else {
