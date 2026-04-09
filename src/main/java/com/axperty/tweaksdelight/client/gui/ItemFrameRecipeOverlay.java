@@ -4,6 +4,7 @@ import com.axperty.tweaksdelight.config.TweaksDelightConfig;
 import com.axperty.tweaksdelight.registry.ItemRegistry;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.RenderTickCounter;
@@ -15,6 +16,7 @@ import net.minecraft.recipe.Ingredient;
 import net.minecraft.recipe.RecipeEntry;
 import net.minecraft.recipe.RecipeManager;
 import net.minecraft.text.Text;
+import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.MathHelper;
 
 import java.util.ArrayList;
@@ -45,19 +47,34 @@ public class ItemFrameRecipeOverlay {
         prevFadeProgress = fadeProgress;
         if (mc.world == null || mc.player == null) return;
 
-        Entity crosshairTarget = mc.targetedEntity;
+        Entity crosshairEntity = mc.targetedEntity;
         boolean lookingAtValidFrame = false;
+        ItemStack framedItem = ItemStack.EMPTY;
 
-        if (crosshairTarget instanceof ItemFrameEntity itemFrame) {
-            ItemStack framedItem = itemFrame.getHeldItemStack();
-            if (!framedItem.isEmpty() && isFoodItem(framedItem)) {
-                if (!ItemStack.areEqual(framedItem, targetFoodItem)) {
-                    targetFoodItem = framedItem.copy();
-                    updateCachedRecipe(mc, framedItem);
+        if (crosshairEntity instanceof ItemFrameEntity itemFrame) {
+            framedItem = itemFrame.getHeldItemStack();
+        } else if (mc.crosshairTarget instanceof BlockHitResult blockHitResult) {
+            BlockEntity blockEntity = mc.world.getBlockEntity(blockHitResult.getBlockPos());
+            if (blockEntity != null && blockEntity.getClass().getName().contains("fastitemframes")) {
+                try {
+                    java.lang.reflect.Method getItemMethod = blockEntity.getClass().getMethod("getItem");
+                    Object result = getItemMethod.invoke(blockEntity);
+                    if (result instanceof ItemStack stack) {
+                        framedItem = stack;
+                    }
+                } catch (Exception e) {
+                    // Ignore reflection errors
                 }
-                if (!cachedIngredients.isEmpty()) {
-                    lookingAtValidFrame = true;
-                }
+            }
+        }
+
+        if (!framedItem.isEmpty() && isFoodItem(framedItem)) {
+            if (!ItemStack.areEqual(framedItem, targetFoodItem)) {
+                targetFoodItem = framedItem.copy();
+                updateCachedRecipe(mc, framedItem);
+            }
+            if (!cachedIngredients.isEmpty()) {
+                lookingAtValidFrame = true;
             }
         }
 
