@@ -14,6 +14,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.BlockHitResult;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -46,26 +48,35 @@ public class ItemFrameRecipeOverlay {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null) return;
 
-        Entity crosshairTarget = mc.crosshairPickEntity;
+        Entity crosshairEntity = mc.crosshairPickEntity;
         boolean lookingAtValidFrame = false;
+        ItemStack framedItem = ItemStack.EMPTY;
 
-        if (crosshairTarget instanceof ItemFrame itemFrame) {
-            ItemStack framedItem = itemFrame.getItem();
-            if (!framedItem.isEmpty() && isFoodItem(framedItem)) {
-                if (!ItemStack.isSameItemSameComponents(framedItem, targetFoodItem)) {
-                    targetFoodItem = framedItem.copy();
-                    updateCachedRecipe(mc, framedItem);
-                }
-                if (!cachedIngredients.isEmpty()) {
-                    lookingAtValidFrame = true;
+        if (crosshairEntity instanceof ItemFrame itemFrame) {
+            framedItem = itemFrame.getItem();
+        } else if (mc.hitResult instanceof BlockHitResult blockHitResult) {
+            BlockEntity blockEntity = mc.level.getBlockEntity(blockHitResult.getBlockPos());
+            if (blockEntity != null && blockEntity.getClass().getName().contains("fastitemframes")) {
+                try {
+                    java.lang.reflect.Method getItemMethod = blockEntity.getClass().getMethod("getItem");
+                    Object result = getItemMethod.invoke(blockEntity);
+                    if (result instanceof ItemStack stack) {
+                        framedItem = stack;
+                    }
+                } catch (Exception e) {
+                    // Ignore reflection errors
                 }
             }
         }
 
-        if (lookingAtValidFrame) {
-            targetFade = 1.0f;
-        } else {
-            targetFade = 0.0f;
+        if (!framedItem.isEmpty() && isFoodItem(framedItem)) {
+            if (!ItemStack.isSameItemSameComponents(framedItem, targetFoodItem)) {
+                targetFoodItem = framedItem.copy();
+                updateCachedRecipe(mc, framedItem);
+            }
+            if (!cachedIngredients.isEmpty()) {
+                lookingAtValidFrame = true;
+            }
         }
 
         if (targetFade > 0.0f) {
