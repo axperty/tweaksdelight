@@ -1,5 +1,8 @@
 {
   "gui.tweaksdelight.recipe": "Receta:",
   "gui.tweaksdelight.cooking_pot": "Olla",
-  "gui.tweaksdelight.skillet": "Sartén"
+  "gui.tweaksdelight.skillet": "Sartén",
+  "message.tweaksdelight.meal_dispenser.no_space": "¡No hay suficiente espacio!",
+  "message.tweaksdelight.meal_dispenser.missing": "Falta: "
 }
+

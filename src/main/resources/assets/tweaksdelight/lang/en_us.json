@@ -1,5 +1,7 @@
 {
   "gui.tweaksdelight.recipe": "Recipe:",
   "gui.tweaksdelight.cooking_pot": "Cooking Pot",
-  "gui.tweaksdelight.skillet": "Skillet"
+  "gui.tweaksdelight.skillet": "Skillet",
+  "message.tweaksdelight.meal_dispenser.no_space": "Not enough space!",
+  "message.tweaksdelight.meal_dispenser.missing": "Missing: "
 }
