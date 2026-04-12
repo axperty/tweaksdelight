@@ -4,7 +4,7 @@
 
 ### ✨ What's New:
 
-- Added compatibility with Fast Item Frames.
+- Added a feature where shift-clicking a chest, barrel, or cabinet while holding a meal grabs the required ingredients to the player.
 
 ***
 

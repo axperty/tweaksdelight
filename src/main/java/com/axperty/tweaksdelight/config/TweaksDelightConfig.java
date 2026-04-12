@@ -48,5 +48,7 @@ public class TweaksDelightConfig {
         public int smartIngredientHighlightingDelay = 500;
         public boolean enableCookingPotOverlay = true;
         public boolean enableSkilletOverlay = true;
+        public boolean enableMealIngredientGrabber = true;
+        public boolean enableMealIngredientOverlay = true;
     }
 }
