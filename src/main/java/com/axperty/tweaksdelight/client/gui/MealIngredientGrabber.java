@@ -20,6 +20,7 @@ import net.minecraft.text.Text;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.context.ContextParameterMap;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -169,27 +170,46 @@ public class MealIngredientGrabber {
     }
 
     private static boolean hasRoom(PlayerInventory inventory, List<ItemStack> items) {
-        int freeSlots = 0;
-        for (int i = 0; i < inventory.size(); i++) {
-            if (inventory.getStack(i).isEmpty()) freeSlots++;
+        DefaultedList<ItemStack> simulatedInv = DefaultedList.ofSize(inventory.getMainStacks().size(), ItemStack.EMPTY);
+        for (int i = 0; i < inventory.getMainStacks().size(); i++) {
+            simulatedInv.set(i, inventory.getMainStacks().get(i).copy());
         }
 
         for (ItemStack item : items) {
-            boolean canStack = false;
-            for (int i = 0; i < inventory.size(); i++) {
-                ItemStack existing = inventory.getStack(i);
-                if (!existing.isEmpty()
-                        && ItemStack.areItemsEqual(existing, item)
-                        && existing.getCount() < existing.getMaxCount()) {
-                    canStack = true;
-                    break;
+            if (item.isEmpty()) continue;
+
+            int remaining = item.getCount();
+
+            for (int i = 0; i < simulatedInv.size(); i++) {
+                if (remaining <= 0) break;
+
+                ItemStack existing = simulatedInv.get(i);
+                if (!existing.isEmpty() && ItemStack.areItemsAndComponentsEqual(existing, item)) {
+                    int space = existing.getMaxCount() - existing.getCount();
+                    if (space > 0) {
+                        int toAdd = Math.min(space, remaining);
+                        existing.increment(toAdd);
+                        remaining -= toAdd;
+                    }
                 }
             }
-            if (!canStack) {
-                if (freeSlots <= 0) return false;
-                freeSlots--;
+
+            for (int i = 0; i < simulatedInv.size(); i++) {
+                if (remaining <= 0) break;
+
+                ItemStack existing = simulatedInv.get(i);
+                if (existing.isEmpty()) {
+                    int toAdd = Math.min(item.getMaxCount(), remaining);
+                    simulatedInv.set(i, item.copyWithCount(toAdd));
+                    remaining -= toAdd;
+                }
+            }
+
+            if (remaining > 0) {
+                return false;
             }
         }
+
         return true;
     }
 
