@@ -49,5 +49,6 @@ public class TweaksDelightConfig {
         public boolean enableCookingPotOverlay = true;
         public boolean enableSkilletOverlay = true;
         public boolean enableMealIngredientGrabber = true;
+        public boolean enableMealIngredientOverlay = true;
     }
 }

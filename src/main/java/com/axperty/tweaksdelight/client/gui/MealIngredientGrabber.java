@@ -11,7 +11,10 @@ import net.minecraft.recipe.RecipeEntry;
 import net.minecraft.recipe.RecipeManager;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 import java.util.ArrayList;
@@ -23,19 +26,21 @@ public class MealIngredientGrabber {
         UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
 
             if (!TweaksDelightConfig.CLIENT.enableMealIngredientGrabber) return ActionResult.PASS;
-            if (world.isClient()) return ActionResult.PASS;
             if (!player.isSneaking()) return ActionResult.PASS;
             BlockEntity be = world.getBlockEntity(hitResult.getBlockPos());
-            if (!(be instanceof Inventory container)) return ActionResult.PASS;
+            if (!(be instanceof Inventory)) return ActionResult.PASS;
             ItemStack heldStack = player.getStackInHand(hand);
             if (heldStack.isEmpty()) return ActionResult.PASS;
-            if (!heldStack.contains(net.minecraft.component.DataComponentTypes.FOOD)) return ActionResult.PASS;
+            if (!isFoodItem(heldStack)) return ActionResult.PASS;
+            if (world.isClient()) return ActionResult.SUCCESS;
 
+            Inventory container = (Inventory) be;
             List<Ingredient> recipeIngredients = getRecipeIngredients(world, heldStack);
             if (recipeIngredients.isEmpty()) return ActionResult.PASS;
 
             int[] claimedFromSlot = new int[container.size()];
             List<int[]> transfers = new ArrayList<>();
+            int missingIngredientCount = 0;
             List<Text> missingNames = new ArrayList<>();
 
             for (Ingredient ing : recipeIngredients) {
@@ -52,23 +57,24 @@ public class MealIngredientGrabber {
                     }
                 }
                 if (!found) {
-                    ItemStack[] matching = ing.getMatchingStacks();
-                    if (matching.length > 0 && !matching[0].isEmpty()) {
-                        boolean playerHasIt = false;
-                        for (int i = 0; i < player.getInventory().size(); i++) {
-                            if (ing.test(player.getInventory().getStack(i))) {
-                                playerHasIt = true;
-                                break;
-                            }
+                    boolean playerHasIt = false;
+                    for (int i = 0; i < player.getInventory().size(); i++) {
+                        if (ing.test(player.getInventory().getStack(i))) {
+                            playerHasIt = true;
+                            break;
                         }
-                        if (!playerHasIt) {
+                    }
+                    if (!playerHasIt) {
+                        missingIngredientCount++;
+                        ItemStack[] matching = ing.getMatchingStacks();
+                        if (matching.length > 0 && !matching[0].isEmpty()) {
                             missingNames.add(matching[0].getName());
                         }
                     }
                 }
             }
 
-            if (transfers.isEmpty() && missingNames.isEmpty()) return ActionResult.PASS;
+            if (transfers.isEmpty() && missingIngredientCount == 0) return ActionResult.PASS;
 
             if (!transfers.isEmpty()) {
                 List<ItemStack> stacksToGive = new ArrayList<>();
@@ -92,13 +98,20 @@ public class MealIngredientGrabber {
                         }
                     }
                 }
+
+                world.playSound(null, player.getX(), player.getY(), player.getZ(),
+                        SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, 0.2f, 1.4f);
             }
 
-            if (!missingNames.isEmpty()) {
+            if (missingIngredientCount > 0) {
                 MutableText msg = Text.translatable("message.tweaksdelight.meal_dispenser.missing");
-                for (int i = 0; i < missingNames.size(); i++) {
-                    if (i > 0) msg.append(Text.literal(", "));
-                    msg.append(missingNames.get(i));
+                if (!missingNames.isEmpty()) {
+                    for (int i = 0; i < missingNames.size(); i++) {
+                        if (i > 0) msg.append(Text.literal(", "));
+                        msg.append(missingNames.get(i));
+                    }
+                } else {
+                    msg.append(Text.literal(missingIngredientCount + " ingredient(s)"));
                 }
                 player.sendMessage(msg, true);
             }
@@ -130,6 +143,14 @@ public class MealIngredientGrabber {
             if (!ing.isEmpty()) result.add(ing);
         }
         return result;
+    }
+
+    private static boolean isFoodItem(ItemStack stack) {
+        if (stack.contains(net.minecraft.component.DataComponentTypes.FOOD)) return true;
+        String id = stack.getItem().toString().toLowerCase();
+        return id.contains("pie") || id.contains("stew") || id.contains("soup") ||
+                id.contains("feast") || id.contains("cake") || id.contains("meal") ||
+                id.contains("salad") || id.contains("potage") || id.contains("roast");
     }
 
     private static boolean hasRoom(PlayerInventory inventory, List<ItemStack> items) {
