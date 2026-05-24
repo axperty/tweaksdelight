@@ -1,0 +1,9 @@
+{
+  "gui.tweaksdelight.recipe": "Рецепт:",
+  "gui.tweaksdelight.cooking_pot": "Каструля",
+  "gui.tweaksdelight.skillet": "Сковорода",
+  "gui.tweaksdelight.meal_grab": "Натисніть, щоб взяти інгредієнти для:",
+  "gui.tweaksdelight.meal_missing": "Бракує:",
+  "message.tweaksdelight.meal_dispenser.no_space": "Немає місця!",
+  "message.tweaksdelight.meal_dispenser.missing": "Бракує: "
+}
