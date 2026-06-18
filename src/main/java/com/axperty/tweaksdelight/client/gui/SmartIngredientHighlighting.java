@@ -31,7 +31,7 @@ public class SmartIngredientHighlighting {
 
     @SubscribeEvent
     public static void onScreenRender(ScreenEvent.Render.Post event) {
-        if (!TweaksDelightConfig.CLIENT.enableSmartIngredientHighlighting.get()) return;
+        if (!TweaksDelightConfig.CLIENT_SPEC.isLoaded() || !TweaksDelightConfig.CLIENT.enableSmartIngredientHighlighting.get()) return;
 
         if (!(event.getScreen() instanceof AbstractContainerScreen<?> screen)) {
             resetState();

@@ -2,9 +2,9 @@
 
 ***
 
-### ✨ What's New:
+### 🛠️ Bug Fixes:
 
-- Added compatibility with Fast Item Frames.
+- Fixed an issue where in some cases the game crashed when launching with Tweaks Delight installed (thanks, [SpinWin](https://github.com/SpinWin)!).
 
 ***
 

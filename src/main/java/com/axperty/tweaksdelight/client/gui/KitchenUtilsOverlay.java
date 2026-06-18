@@ -45,6 +45,7 @@ public class KitchenUtilsOverlay {
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Pre event) {
+        if (!TweaksDelightConfig.CLIENT_SPEC.isLoaded()) return;
         prevFadeProgress = fadeProgress;
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null) return;
@@ -187,6 +188,7 @@ public class KitchenUtilsOverlay {
 
     @SubscribeEvent
     public static void onRenderGui(RenderGuiEvent.Post event) {
+        if (!TweaksDelightConfig.CLIENT_SPEC.isLoaded()) return;
         Minecraft mc = Minecraft.getInstance();
         float partialTicks = event.getPartialTick().getGameTimeDeltaPartialTick(true);
         float lerpedFade = Mth.lerp(partialTicks, prevFadeProgress, fadeProgress);

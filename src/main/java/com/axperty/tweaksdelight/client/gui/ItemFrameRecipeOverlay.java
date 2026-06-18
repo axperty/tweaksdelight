@@ -36,7 +36,7 @@ public class ItemFrameRecipeOverlay {
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Pre event) {
-        if (!TweaksDelightConfig.CLIENT.enableItemFrameRecipeOverlay.get()) {
+        if (!TweaksDelightConfig.CLIENT_SPEC.isLoaded() || !TweaksDelightConfig.CLIENT.enableItemFrameRecipeOverlay.get()) {
             targetFade = 0.0f;
             fadeProgress = 0.0f;
             prevFadeProgress = 0.0f;
@@ -143,7 +143,7 @@ public class ItemFrameRecipeOverlay {
 
     @SubscribeEvent
     public static void onRenderGui(RenderGuiEvent.Post event) {
-        if (!TweaksDelightConfig.CLIENT.enableItemFrameRecipeOverlay.get()) return;
+        if (!TweaksDelightConfig.CLIENT_SPEC.isLoaded() || !TweaksDelightConfig.CLIENT.enableItemFrameRecipeOverlay.get()) return;
 
         Minecraft mc = Minecraft.getInstance();
         float partialTicks = event.getPartialTick().getGameTimeDeltaPartialTick(true);

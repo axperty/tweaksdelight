@@ -2,6 +2,7 @@ package com.axperty.tweaksdelight;
 
 import com.axperty.tweaksdelight.config.TweaksDelightConfig;
 import com.axperty.tweaksdelight.registry.ItemRegistry;
+import net.neoforged.fml.config.ModConfig;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
@@ -25,7 +26,7 @@ public class TweaksDelight
 
     public TweaksDelight(IEventBus modEventBus, ModContainer modContainer)
     {
-        modContainer.registerConfig(net.neoforged.fml.config.ModConfig.Type.CLIENT, TweaksDelightConfig.CLIENT_SPEC);
+        modContainer.registerConfig(ModConfig.Type.CLIENT, TweaksDelightConfig.CLIENT_SPEC);
         modEventBus.addListener(this::commonSetup);
         ItemRegistry.ITEMS.register(modEventBus);
         NeoForge.EVENT_BUS.register(this);
