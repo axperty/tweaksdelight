@@ -4,10 +4,7 @@
 
 ### ✨ What's New:
 
-- This is the first version of Tweaks Delight, the features include:
-  - Display food recipes by looking at items in item frames, this works with recipes from other Farmer's Delight add-ons.
-  - View the contents of Cooking Pots and Skillets easily by looking at them.
-  - When inside a chest or your inventory, hold Shift over a meal to see all necessary ingredients for easier gathering.
+- Added support for Minecraft 26.2.
 
 ***
 

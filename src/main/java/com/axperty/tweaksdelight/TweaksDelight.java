@@ -14,5 +14,6 @@ public class TweaksDelight implements ModInitializer {
     public void onInitialize() {
         TweaksDelightConfig.init();
         ItemRegistry.register();
+        LOGGER.info("Tweaks Delight loaded");
     }
 }

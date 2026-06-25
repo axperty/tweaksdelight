@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "id": "tweaksdelight",
-  "version": "26.04.07+26.1-fabric",
-  "name": "Tweaks Delight",
-  "description": "An addon mod for Farmer's Delight that adds extra quality of life features.",
+  "id": "${mod_id}",
+  "version": "${mod_version}",
+  "name": "${mod_name}",
+  "description": "${mod_description}",
   "authors": [
-    "Axperty"
+    "${mod_authors}"
   ],
   "contact": {
-    "source": "https://github.com/axperty/tweaksdelight"
+    "sources": "https://github.com/axperty/tweaksdelight"
   },
-  "license": "MIT",
-  "icon": "assets/tweaksdelight/logo.png",
+  "license": "${mod_license}",
+  "icon": "assets/${mod_id}/logo.png",
   "environment": "*",
   "entrypoints": {
     "main": [
